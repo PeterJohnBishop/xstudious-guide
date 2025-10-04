@@ -9,7 +9,7 @@ import (
 	"github.com/resend/resend-go/v2"
 )
 
-func SendEmail() error {
+func SendEmail(alias string, email string, recipients []string, subject string, html string) error {
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error loading .env file")
@@ -21,11 +21,13 @@ func SendEmail() error {
 
 	client := resend.NewClient(apiKey)
 
+	sender := fmt.Sprintf("%s <%s>", alias, email)
+
 	params := &resend.SendEmailRequest{
-		From:    "Peter <me@peterjohnbishop.com>",
-		To:      []string{"peterjbishop.denver@gmail.com"},
-		Subject: "Hello world",
-		Html:    "<strong>It works!</strong>",
+		From:    sender,
+		To:      recipients,
+		Subject: subject,
+		Html:    html,
 	}
 
 	sent, err := client.Emails.Send(params)
