@@ -1,9 +1,8 @@
 package main
 
 import (
-	"fmt"
 	"log"
-	"xstudious-guide/amazon"
+	"xstudious-guide/server"
 
 	"github.com/joho/godotenv"
 )
@@ -15,11 +14,7 @@ func main() {
 		log.Fatal("Error loading .env file")
 	}
 
-	cfg := amazon.StartAws()
-	s3Client := amazon.ConnectS3(cfg)
-	fmt.Println(s3Client)
-	dynamoClient := amazon.ConnectDB(cfg)
-	fmt.Println(dynamoClient)
+	server.InitServer()
 
 	// alias := "Acme"
 	// sender := "go-server@peterjohnbishop.com"
