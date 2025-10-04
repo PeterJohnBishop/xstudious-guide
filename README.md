@@ -1,5 +1,6 @@
 # xstudious-guide
 
-https://app.netlify.com/teams/pierre81385/projects -> verify with GitHub
-
-https://resend.com/ -> email API
+verified domain - Netlify https://www.netlify.com
+send email - Resend https://resend.com/
+document storage - aws dynamodb
+file storage - aws s3
