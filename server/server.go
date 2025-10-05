@@ -8,8 +8,12 @@ import (
 )
 
 func InitServer() {
+	go hub.Run()
+
 	gin.SetMode(gin.ReleaseMode)
 	router := gin.Default()
+
+	router.GET("/ws", serveWs)
 
 	// connect DynamoDB
 	dynamoClient := amazon.ConnectDB()

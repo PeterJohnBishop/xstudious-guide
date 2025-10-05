@@ -10,7 +10,10 @@ require (
 	github.com/resend/resend-go/v2 v2.25.0
 )
 
-require github.com/aws/aws-sdk-go-v2/service/dynamodbstreams v1.31.0 // indirect
+require (
+	github.com/aws/aws-sdk-go-v2/service/dynamodbstreams v1.31.0 // indirect
+	github.com/gorilla/websocket v1.5.3 // indirect
+)
 
 require (
 	github.com/aws/aws-sdk-go-v2 v1.39.2
