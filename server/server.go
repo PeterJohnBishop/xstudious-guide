@@ -14,6 +14,7 @@ func InitServer() {
 	router := gin.Default()
 
 	router.GET("/ws", serveWs)
+	router.POST("/webhook", WebhookHandler)
 
 	// connect DynamoDB
 	dynamoClient := amazon.ConnectDB()
