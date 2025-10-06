@@ -3,6 +3,7 @@ package server
 import (
 	"log"
 	"xstudious-guide/amazon"
+	location "xstudious-guide/maps"
 
 	"github.com/gin-gonic/gin"
 )
@@ -24,6 +25,11 @@ func InitServer() {
 	s3Client := amazon.ConnectS3()
 	AddS3Routes(s3Client, dynamoClient, router)
 
+	// connect Google Maps
+	mapClient := location.InitMaps()
+	AddMapRoutes(mapClient, router)
+
+	// Start the server
 	log.Println("Server listening on :8080")
 	router.Run(":8080")
 }

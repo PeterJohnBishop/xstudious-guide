@@ -6,6 +6,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/gin-gonic/gin"
+	"googlemaps.github.io/maps"
 )
 
 func AddDynamoDBRoutes(client *dynamodb.Client, r *gin.Engine) {
@@ -29,5 +30,14 @@ func AddS3Routes(s3client *s3.Client, dynamoclient *dynamodb.Client, r *gin.Engi
 		auth.POST("/upload", Upload(s3client, dynamoclient))
 		auth.GET("/files", GetUserFilesHandler(dynamoclient, s3.NewPresignClient(s3client)))
 		auth.GET("/download", Download(s3client))
+	}
+}
+
+func AddMapRoutes(client *maps.Client, r *gin.Engine) {
+	auth := r.Group("/", authentication.AuthMiddleware())
+	{
+		auth.GET("/geocode", Geocode(client))
+		auth.GET("/reverse-geocode", ReverseGeocode(client))
+		auth.GET("/directions", GetDirections(client))
 	}
 }

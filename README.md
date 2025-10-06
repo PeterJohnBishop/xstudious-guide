@@ -5,3 +5,4 @@ send email - Resend https://resend.com/
 file storage - aws s3
 document storage - aws dynamodb
 websocket - /ws
+webhook - /webhook
