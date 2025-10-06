@@ -4,17 +4,14 @@ import (
 	"log"
 	"os"
 
-	"github.com/openai/openai-go" // imported as openai
-	"github.com/openai/openai-go/option"
+	openai "github.com/sashabaranov/go-openai"
 )
 
 func InitAi() *openai.Client {
 
 	key := os.Getenv("OPENAI_API_KEY")
 
-	client := openai.NewClient(
-		option.WithAPIKey(key),
-	)
+	client := openai.NewClient(key)
 	log.Printf("Connected to OpenAI\n")
-	return &client
+	return client
 }

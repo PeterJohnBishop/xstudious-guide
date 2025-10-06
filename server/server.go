@@ -2,6 +2,7 @@ package server
 
 import (
 	"log"
+	"xstudious-guide/ai"
 	"xstudious-guide/amazon"
 	location "xstudious-guide/maps"
 
@@ -28,6 +29,10 @@ func InitServer() {
 	// connect Google Maps
 	mapClient := location.InitMaps()
 	AddMapRoutes(mapClient, router)
+
+	// connect with OpenAI
+	aiClient := ai.InitAi()
+	AddAIROutes(aiClient, router)
 
 	// Start the server
 	log.Println("Server listening on :8080")

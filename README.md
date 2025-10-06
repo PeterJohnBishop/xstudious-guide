@@ -1,8 +1,8 @@
 # xstudious-guide
 
-verified domain - Netlify https://www.netlify.com
-send email - Resend https://resend.com/
-file storage - aws s3
-document storage - aws dynamodb
-websocket - /ws
-webhook - /webhook
+Auth (JWT) → secure, user-aware endpoints
+File storage (S3) → images, documents, media uploads
+Data store (DynamoDB) → scalable, flexible schema storage
+Realtime comms (WebSocket Hub) → chat, notifications, live dashboards
+Email delivery (Resend) → transactional or marketing emails
+3rd-party integrations (webhooks, Google Maps) → extendable to external services

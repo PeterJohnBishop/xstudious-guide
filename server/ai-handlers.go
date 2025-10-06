@@ -23,7 +23,7 @@ type BasicPrompt struct {
 	Prompt string `json:"prompt"`
 }
 
-func SendPrompt(client *openai.Client) gin.HandlerFunc {
+func SendBasicPrompt(client *openai.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var prompt BasicPrompt
 		if err := c.ShouldBindJSON(&prompt); err != nil {

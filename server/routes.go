@@ -6,6 +6,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/gin-gonic/gin"
+	openai "github.com/sashabaranov/go-openai"
 	"googlemaps.github.io/maps"
 )
 
@@ -39,5 +40,12 @@ func AddMapRoutes(client *maps.Client, r *gin.Engine) {
 		auth.GET("/geocode", Geocode(client))
 		auth.GET("/reverse-geocode", ReverseGeocode(client))
 		auth.GET("/directions", GetDirections(client))
+	}
+}
+
+func AddAIROutes(client *openai.Client, r *gin.Engine) {
+	auth := r.Group("/", authentication.AuthMiddleware())
+	{
+		auth.POST("/ai/basic", SendBasicPrompt(client))
 	}
 }
