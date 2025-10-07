@@ -40,7 +40,7 @@ func ConnectDB() *dynamodb.Client {
 		if err != nil {
 			log.Fatalf("failed to create/check table %s: %v", name, err)
 		}
-		log.Printf("%s table read for data\n", name)
+		log.Printf("%s table ready for data\n", name)
 	}
 
 	log.Printf("Connected to DynamoDB\n")
@@ -52,7 +52,7 @@ func CreateTableIfNotExists(createFunc func(*dynamodb.Client, string) error, cli
 		TableName: aws.String(tableName),
 	})
 	if err == nil {
-		log.Printf("%s table already exists\n", tableName)
+		log.Printf("%s table exists\n", tableName)
 		return nil
 	}
 

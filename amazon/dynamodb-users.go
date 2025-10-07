@@ -159,6 +159,19 @@ func UpdateUser(client *dynamodb.Client, tableName string, user User) error {
 	updateBuilder := expression.UpdateBuilder{}
 	updatedFields := 0
 
+	getOut, err := client.GetItem(context.TODO(), &dynamodb.GetItemInput{
+		TableName: aws.String(tableName),
+		Key: map[string]types.AttributeValue{
+			"id": &types.AttributeValueMemberS{Value: user.ID},
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("error checking user existence: %w", err)
+	}
+	if getOut.Item == nil {
+		return fmt.Errorf("user with ID %s not found", user.ID)
+	}
+
 	if user.Email != "" {
 		expr, err := expression.NewBuilder().
 			WithFilter(expression.Name("email").Equal(expression.Value(user.Email))).
@@ -178,10 +191,8 @@ func UpdateUser(client *dynamodb.Client, tableName string, user User) error {
 		}
 
 		for _, item := range scanOut.Items {
-			if idAttr, ok := item["id"].(*types.AttributeValueMemberS); ok {
-				if idAttr.Value != user.ID {
-					return fmt.Errorf("email %s is already in use", user.Email)
-				}
+			if idAttr, ok := item["id"].(*types.AttributeValueMemberS); ok && idAttr.Value != user.ID {
+				return fmt.Errorf("email %s is already in use", user.Email)
 			}
 		}
 
@@ -211,33 +222,40 @@ func UpdateUser(client *dynamodb.Client, tableName string, user User) error {
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
 		UpdateExpression:          expr.Update(),
+		ConditionExpression:       aws.String("attribute_exists(id)"),
 		ReturnValues:              types.ReturnValueUpdatedNew,
 	})
 	if err != nil {
-		return fmt.Errorf("error in client updater: %w", err)
+		return fmt.Errorf("error updating user: %w", err)
 	}
 
 	return nil
 }
 
 func UpdatePassword(client *dynamodb.Client, tableName string, user User) error {
-	updateBuilder := expression.UpdateBuilder{}
-	updatedFields := 0
-
-	if user.Name != "" && user.Email != "" && user.Password != "" {
-		updateBuilder = updateBuilder.Set(expression.Name("password"), expression.Value(user.Password))
-		updatedFields++
+	if user.ID == "" || user.Password == "" {
+		return fmt.Errorf("missing user ID or password")
 	}
 
-	if updatedFields == 0 {
-		fmt.Println("No fields to update")
-		return fmt.Errorf("must update at least one field")
+	getOut, err := client.GetItem(context.TODO(), &dynamodb.GetItemInput{
+		TableName: aws.String(tableName),
+		Key: map[string]types.AttributeValue{
+			"id": &types.AttributeValueMemberS{Value: user.ID},
+		},
+	})
+	if err != nil {
+		return fmt.Errorf("error checking user existence: %w", err)
 	}
+	if getOut.Item == nil {
+		return fmt.Errorf("user with ID %s not found", user.ID)
+	}
+
+	updateBuilder := expression.UpdateBuilder{}.
+		Set(expression.Name("password"), expression.Value(user.Password))
 
 	expr, err := expression.NewBuilder().WithUpdate(updateBuilder).Build()
 	if err != nil {
-		fmt.Println("Error in expression builder:", err)
-		return err
+		return fmt.Errorf("error in expression builder: %w", err)
 	}
 
 	_, err = client.UpdateItem(context.TODO(), &dynamodb.UpdateItemInput{
@@ -248,15 +266,15 @@ func UpdatePassword(client *dynamodb.Client, tableName string, user User) error 
 		ExpressionAttributeNames:  expr.Names(),
 		ExpressionAttributeValues: expr.Values(),
 		UpdateExpression:          expr.Update(),
+		ConditionExpression:       aws.String("attribute_exists(id)"),
 		ReturnValues:              types.ReturnValueUpdatedNew,
 	})
-
 	if err != nil {
-		fmt.Println("Error in client updater:", err)
+		return fmt.Errorf("error updating password: %w", err)
 	}
-	return err
-}
 
+	return nil
+}
 func DeleteUser(client *dynamodb.Client, tableName, id string) error {
 	_, err := client.DeleteItem(context.TODO(), &dynamodb.DeleteItemInput{
 		TableName: aws.String(tableName),
