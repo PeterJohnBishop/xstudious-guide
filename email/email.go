@@ -7,22 +7,39 @@ import (
 	"github.com/resend/resend-go/v2"
 )
 
-func SendEmail(alias string, email string, recipients []string, subject string, html string) error {
+type EmailRequest struct {
+	Alias      string   `json:"alias"`
+	Sender     string   `json:"sender"`
+	Recipients []string `json:"recipients"`
+	Subject    string   `json:"subject"`
+	Html       string   `json:"html"`
+}
+
+func InitEmail() (*resend.Client, string) {
 
 	apiKey := os.Getenv("RESEND_API_KEY")
 	if apiKey == "" {
-		return fmt.Errorf("RESEND_API_KEY environment variable is not set")
+		msg := "RESEND_API_KEY environment variable is not set"
+		return nil, msg
 	}
 
 	client := resend.NewClient(apiKey)
+	if client == nil {
+		msg := "unable to connect to Resend"
+		return nil, msg
+	}
+	return client, "Connected to Resend"
+}
 
-	sender := fmt.Sprintf("%s <%s>", alias, email)
+func SendEmail(client *resend.Client, email EmailRequest) error {
+
+	sender := fmt.Sprintf("%s <%s>", email.Alias, email.Sender)
 
 	params := &resend.SendEmailRequest{
 		From:    sender,
-		To:      recipients,
-		Subject: subject,
-		Html:    html,
+		To:      email.Recipients,
+		Subject: email.Subject,
+		Html:    email.Html,
 	}
 
 	sent, err := client.Emails.Send(params)

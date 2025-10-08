@@ -24,7 +24,7 @@ type UserFile struct {
 	Uploaded int64  `dynamodbav:"uploaded"`
 }
 
-func ConnectS3() *s3.Client {
+func ConnectS3() (*s3.Client, string) {
 
 	accessKey := os.Getenv("AWS_ACCESS_KEY_ID")
 	secretKey := os.Getenv("AWS_SECRET_ACCESS_KEY")
@@ -42,10 +42,11 @@ func ConnectS3() *s3.Client {
 	})
 	_, err := s3Client.ListBuckets(context.TODO(), &s3.ListBucketsInput{})
 	if err != nil {
-		log.Fatalf("unable to load S3 buckets, %v", err)
+		msg := fmt.Sprintf("unable to load S3 buckets, %v", err)
+		return nil, msg
 	}
 	log.Printf("Connected to S3\n")
-	return s3Client
+	return s3Client, "Connected to S3"
 }
 
 func CreateFilesTable(client *dynamodb.Client, tableName string) error {

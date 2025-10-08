@@ -6,6 +6,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/gin-gonic/gin"
+	"github.com/resend/resend-go/v2"
 	openai "github.com/sashabaranov/go-openai"
 	"googlemaps.github.io/maps"
 )
@@ -47,5 +48,12 @@ func AddAIROutes(client *openai.Client, r *gin.Engine) {
 	auth := r.Group("/", authentication.AuthMiddleware())
 	{
 		auth.POST("/ai/basic", SendBasicPrompt(client))
+	}
+}
+
+func AddEmailRoutes(client *resend.Client, r *gin.Engine) {
+	auth := r.Group("/", authentication.AuthMiddleware())
+	{
+		auth.POST("/send-email", SendEmailHandler(client))
 	}
 }

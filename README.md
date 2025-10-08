@@ -94,6 +94,19 @@ Response:
     }
 }
 
+PUT {{baseUrl}}/users
+
+Request:
+{
+  "id": "u_dz6zSziQQGGBMV7diDoqlQ",
+  "name": "Test 2 Updated",
+  "email": "pbsihop+2@clickup.com"
+}
+Response:
+{
+    "message": "User Updated!"
+}
+
 DELETE {{baseUrl}}/users/{{user.id}}
 
 Response: 

@@ -2,7 +2,7 @@ package location
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"os"
 
 	"googlemaps.github.io/maps"
@@ -10,17 +10,17 @@ import (
 
 // repo and documentation https://github.com/googlemaps/google-maps-services-go?tab=readme-ov-file
 
-func InitMaps() *maps.Client {
+func InitMaps() (*maps.Client, string) {
 
 	mapsKey := os.Getenv("GOOGLE_MAPS_API_KEY")
 
 	mapClient, err := maps.NewClient(maps.WithAPIKey(mapsKey))
 	if err != nil {
-		log.Fatalf("fatal error: %s", err)
+		msg := fmt.Sprintf("fatal error: %s", err)
+		return nil, msg
 	}
 
-	log.Println("Connected to Google Maps")
-	return mapClient
+	return mapClient, "Connected to Google Maps"
 }
 
 func GetRoute(client *maps.Client, origin string, destination string) ([]maps.Route, error) {

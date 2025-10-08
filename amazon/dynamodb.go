@@ -14,7 +14,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/sso/types"
 )
 
-func ConnectDB() *dynamodb.Client {
+func ConnectDB() (*dynamodb.Client, string) {
 
 	accessKey := os.Getenv("AWS_ACCESS_KEY_ID")
 	secretKey := os.Getenv("AWS_SECRET_ACCESS_KEY")
@@ -34,17 +34,17 @@ func ConnectDB() *dynamodb.Client {
 		"files": CreateFilesTable,
 	}
 
-	// Loop through tables
 	for name, createFunc := range tables {
 		err := CreateTableIfNotExists(createFunc, ddbClient, name)
 		if err != nil {
-			log.Fatalf("failed to create/check table %s: %v", name, err)
+			msg := fmt.Sprintf("Failed to create or verify %s table: %v", name, err)
+			return nil, msg
 		}
 		log.Printf("%s table ready for data\n", name)
 	}
 
 	log.Printf("Connected to DynamoDB\n")
-	return ddbClient
+	return ddbClient, "Connected to DynamoDB"
 }
 
 func CreateTableIfNotExists(createFunc func(*dynamodb.Client, string) error, client *dynamodb.Client, tableName string) error {
