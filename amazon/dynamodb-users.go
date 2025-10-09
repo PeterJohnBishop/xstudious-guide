@@ -275,6 +275,7 @@ func UpdatePassword(client *dynamodb.Client, tableName string, user User) error 
 
 	return nil
 }
+
 func DeleteUser(client *dynamodb.Client, tableName, id string) error {
 	_, err := client.DeleteItem(context.TODO(), &dynamodb.DeleteItemInput{
 		TableName: aws.String(tableName),

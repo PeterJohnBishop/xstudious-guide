@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	"xstudious-guide/amazon"
 	"xstudious-guide/authentication"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/feature/dynamodb/attributevalue"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb"
 	"github.com/aws/aws-sdk-go-v2/service/dynamodb/types"
@@ -101,19 +103,29 @@ func AuthUserReq(client *dynamodb.Client) gin.HandlerFunc {
 			Email    string `json:"email"`
 			Password string `json:"password"`
 		}
+
 		if err := c.ShouldBindJSON(&req); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
+			return
+		}
+		if req.Email == "" || req.Password == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Email and password are required"})
 			return
 		}
 
 		user, err := amazon.GetUserByEmail(client, "users", req.Email)
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "No user found with that email."})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "No user found with that email"})
+			return
+		}
+
+		if user.Password == "" {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "User record missing password"})
 			return
 		}
 
 		if !authentication.CheckPasswordHash(req.Password, user.Password) {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Password verification failed"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Incorrect password"})
 			return
 		}
 
@@ -140,6 +152,7 @@ func AuthUserReq(client *dynamodb.Client) gin.HandlerFunc {
 			IssuedAt:  time.Now().Unix(),
 			Subject:   user.ID,
 		}
+
 		refreshToken, err := authentication.NewRefreshToken(refreshClaims)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to create refresh token"})
@@ -147,14 +160,13 @@ func AuthUserReq(client *dynamodb.Client) gin.HandlerFunc {
 		}
 
 		c.JSON(http.StatusOK, gin.H{
-			"message":      "Login Success",
+			"message":      "Login successful",
 			"accessToken":  accessToken,
 			"refreshToken": refreshToken,
 			"user":         user,
 		})
 	}
 }
-
 func GetAllUsersReq(client *dynamodb.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token := strings.TrimPrefix(c.GetHeader("Authorization"), "Bearer ")
@@ -245,30 +257,68 @@ func UpdateUserReq(client *dynamodb.Client) gin.HandlerFunc {
 func UpdatePasswordReq(client *dynamodb.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		token := strings.TrimPrefix(c.GetHeader("Authorization"), "Bearer ")
-		if token == "" || authentication.ParseAccessToken(token) == nil {
+		claims := authentication.ParseAccessToken(token)
+		if token == "" || claims == nil {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Failed to verify token"})
 			return
 		}
 
-		var user amazon.User
-		if err := c.ShouldBindJSON(&user); err != nil {
+		var req struct {
+			CurrentPassword string `json:"currentPassword"`
+			NewPassword     string `json:"newPassword"`
+		}
+
+		if err := c.ShouldBindJSON(&req); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request body"})
 			return
 		}
 
-		hashedPassword, err := authentication.HashedPassword(user.Password)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash password"})
+		if req.CurrentPassword == "" || req.NewPassword == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Missing current or new password"})
 			return
 		}
-		user.Password = hashedPassword
 
+		out, err := client.GetItem(context.TODO(), &dynamodb.GetItemInput{
+			TableName: aws.String("users"),
+			Key: map[string]types.AttributeValue{
+				"id": &types.AttributeValueMemberS{Value: claims.ID},
+			},
+		})
+
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to fetch user"})
+			return
+		}
+
+		if out.Item == nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+			return
+		}
+
+		var user amazon.User
+		if err := attributevalue.UnmarshalMap(out.Item, &user); err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to parse user record"})
+			return
+		}
+
+		if !authentication.CheckPasswordHash(req.CurrentPassword, user.Password) {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "Current password is incorrect"})
+			return
+		}
+
+		hashedPassword, err := authentication.HashedPassword(req.NewPassword)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to hash new password"})
+			return
+		}
+
+		user.Password = hashedPassword
 		if err := amazon.UpdatePassword(client, "users", user); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update password"})
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{"message": "User Password Updated!"})
+		c.JSON(http.StatusOK, gin.H{"message": "Password updated successfully"})
 	}
 }
 
