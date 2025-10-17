@@ -40,15 +40,22 @@ func InitServer() {
 	router.POST("/webhook", WebhookHandler)
 	router.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
-			"DynamoDB":    dynamodbStatus,
-			"S3":          s3Status,
-			"Google_Maps": mapsStatus,
-			"OpenAI":      openAIStatus,
-			"Resend":      emailStatus,
+			"DynamoDB":    safeStatus(dynamodbStatus),
+			"S3":          safeStatus(s3Status),
+			"Google_Maps": safeStatus(mapsStatus),
+			"OpenAI":      safeStatus(openAIStatus),
+			"Resend":      safeStatus(emailStatus),
 		})
 	})
 
 	// Start the server
 	log.Println("Server listening on :8080")
 	router.Run(":8080")
+}
+
+func safeStatus(status interface{}) interface{} {
+	if status == nil {
+		return "unknown"
+	}
+	return status
 }
